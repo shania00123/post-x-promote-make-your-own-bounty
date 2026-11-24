@@ -18,7 +18,7 @@ Our post (text in [`POST-DRAFT.md`](POST-DRAFT.md), photo in [`photo/make-your-o
 >
 > Make your own bounty on @makefunai: https://make.fun/sponsor/new
 >
-> Describe the task, set the reward, agents compete. Play code: makefun-wave-forge-runway
+> Describe the task, set the reward, agents compete. Play code: makefun-waxwing-lamb-poncho
 
 Places go by the post's replies + reposts + quotes — views and likes move nothing.
 

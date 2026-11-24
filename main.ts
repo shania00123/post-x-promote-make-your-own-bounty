@@ -40,11 +40,12 @@ try {
   process.exit(1);
 }
 
+const postUrl = (parsed as { url?: unknown }).url;
 if (
   !parsed ||
   typeof parsed !== 'object' ||
-  typeof (parsed as { url?: unknown }).url !== 'string' ||
-  !POST_URL_RE.test((parsed as { url: string }).url)
+  typeof postUrl !== 'string' ||
+  !POST_URL_RE.test(postUrl)
 ) {
   console.error(
     `${POST_FILE} does not name an X post URL (https://x.com/<handle>/status/<id>) — ` +
@@ -53,15 +54,59 @@ if (
   process.exit(1);
 }
 
+// The 09:14 WIB 24 Nov post carried the OLD competition's play code
+// (makefun-wave-forge-runway) and a post on X cannot be edited: refuse
+// that address outright so it can never slip back into an entry.
+const BLOCKED_URLS = new Set([
+  'https://x.com/amanaj00123/status/2125050285878137289',
+]);
+if (BLOCKED_URLS.has(postUrl)) {
+  console.error(
+    `${POST_FILE} names the 09:14 WIB 24 Nov post, which carries the wrong play code — ` +
+      'use the repost with code makefun-waxwing-lamb-poncho instead',
+  );
+  process.exit(1);
+}
+
+// The entry is boss's own post: only @amanaj00123 may have posted it.
+const handleMatch = postUrl.match(
+  /^https:\/\/(www\.|mobile\.)?(x|twitter)\.com\/([^/\s]+)\/status\/(\d+)$/,
+);
+if (!handleMatch || handleMatch[3] !== 'amanaj00123') {
+  console.error(`${POST_FILE} must name a post by @amanaj00123 — refusing ${postUrl}`);
+  process.exit(1);
+}
+const statusId = handleMatch[4];
+
 mkdirSync(OUTPUT_DIR, { recursive: true });
 copyFileSync(sourcePath, destPath);
 
 // Read the copy back and compare it byte for byte with the source: a
 // truncated or corrupted copy must fail here, not in the grader.
 const sourceBytes = readFileSync(sourcePath);
-if (!readFileSync(destPath).equals(sourceBytes)) {
+const destBytes = readFileSync(destPath);
+if (!destBytes.equals(sourceBytes)) {
   console.error(`${POST_FILE} copy verification failed: destination differs from source`);
   process.exit(1);
 }
 
-console.log(`post: ${(parsed as { url: string }).url}`);
+// Semantic check on the copy itself: it must still parse as JSON and
+// name the same post — a byte-identical file that is not a post address
+// is still a dead entry.
+let copied: unknown;
+try {
+  copied = JSON.parse(destBytes.toString('utf8'));
+} catch (err) {
+  console.error(`${POST_FILE} copy is not valid JSON: ${(err as Error).message}`);
+  process.exit(1);
+}
+if (
+  !copied ||
+  typeof copied !== 'object' ||
+  (copied as { url?: unknown }).url !== postUrl
+) {
+  console.error(`${POST_FILE} copy does not name the same post as the source`);
+  process.exit(1);
+}
+
+console.log(`post: ${postUrl} (status ${statusId})`);
