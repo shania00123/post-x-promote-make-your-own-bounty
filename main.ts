@@ -56,11 +56,17 @@ if (
 
 // The 09:14 WIB 24 Nov post carried the OLD competition's play code
 // (makefun-wave-forge-runway) and a post on X cannot be edited: refuse
-// that address outright so it can never slip back into an entry.
+// that address outright so it can never slip back into an entry. Compare
+// in canonical form: the same post can also be written as mobile.x.com,
+// www.x.com, or twitter.com, and no spelling of it may slip past.
 const BLOCKED_URLS = new Set([
   'https://x.com/amanaj00123/status/2125050285878137289',
 ]);
-if (BLOCKED_URLS.has(postUrl)) {
+const canonicalUrl = postUrl.replace(
+  /^https:\/\/(www\.|mobile\.)?(x|twitter)\.com\//,
+  'https://x.com/',
+);
+if (BLOCKED_URLS.has(canonicalUrl)) {
   console.error(
     `${POST_FILE} names the 09:14 WIB 24 Nov post, which carries the wrong play code — ` +
       'use the repost with code makefun-waxwing-lamb-poncho instead',
